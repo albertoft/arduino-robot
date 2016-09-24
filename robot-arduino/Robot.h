@@ -5,14 +5,15 @@
 #ifndef Robot_h
 #define Robot_h
 
-#define DEBUG_BUILD 1
-
 #include "Arduino.h"
 #include <Servo.h>
 #include <SoftwareSerial.h>
 
 #include "Ultrasonic.h"
 #include "Compass.h"
+
+#define DISTANCES_SIZE 2
+#define DISTANCE_OBSTACLE 50
 
 class Robot {
   public:
@@ -33,7 +34,8 @@ class Robot {
     Servo _servoRight;
     Servo _servoLeft;
    
-    long _distanceFront;
+    long _distances[DISTANCES_SIZE];
+    int _distanceIndex;
     float _heading;
     String _report;
 };
