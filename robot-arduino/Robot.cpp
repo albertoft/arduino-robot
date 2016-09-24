@@ -39,17 +39,62 @@ bool Robot::obstacleDetected() {
   return false;
 }
 
+float Robot::getHeading() {
+  _heading = _compass.getHeadingDegrees();
+  return _heading;
+}
+
+void Robot::setCourse(float course) 
+{
+  _course = course;
+}
+
 void Robot::stop() 
 {
-  _servoRight.write(90);
-  _servoLeft.write(90);
+  setCourse(NO_COURSE);
+  _servoRight.write(SERVO_STOP);
+  _servoLeft.write(SERVO_STOP);
+}
+
+bool Robot::isCourseDeviated()
+{
+  _courseDeviation = _compass.getDeviation(_course, getHeading());
+  return ((isCourseSet()) && (abs(_courseDeviation) > COURSE_MAX_DEVIATION));
+}
+
+bool Robot::isCourseSet()
+{
+  return (_course != NO_COURSE);
 }
 
 void Robot::forward() 
 {
-  //0, 180 => full speed
-  _servoRight.write(0);
-  _servoLeft.write(180);
+  if (isCourseDeviated()) {
+      bool dir = (_courseDeviation > 0);
+      steer(dir);
+  } else {
+    if (_course == NO_COURSE) {
+      setCourse(getHeading());
+    }
+    _servoRight.write(SERVO_RIGHT_FWD);
+    _servoLeft.write(SERVO_LEFT_FWD);
+  }
+}
+
+void Robot::steer(bool direction) 
+{
+  switch (direction) {
+    case LEFT:
+      _servoRight.write(SERVO_RIGHT_STEER);
+      _servoLeft.write(SERVO_STOP);
+      Serial.println("steer LEFT");
+      break;
+    case RIGHT:
+      _servoRight.write(SERVO_STOP);
+      _servoLeft.write(SERVO_LEFT_STEER);
+      Serial.println("steer RIGHT");
+      break;
+  }
 }
 
 void Robot::update()
@@ -59,13 +104,13 @@ void Robot::update()
   } else {
     stop();
   }
+  
   report();
-  delay(200);
 }
 
 void Robot::report()
 {
-  _report = String("d=") + _distances[_distanceIndex] + String(" h=") + _compass.getHeadingDegrees();
+  _report = String("d=") + _distances[_distanceIndex] + String(" c=") + _course + String(" h=") + _heading + String(" dev=") + _courseDeviation;
   Serial.println(_report);
 }
 

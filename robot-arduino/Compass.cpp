@@ -43,3 +43,16 @@ float Compass::getHeadingDegrees()
   return _headingDegrees;
 }
 
+float Compass::getDeviation(float course, float heading)
+{
+  // course and heading in [0, 359]
+  if (heading < course) heading += 360;
+
+  // dev in [0, 359]
+  float dev = heading - course;  
+
+  // smallest angle
+  dev = (dev < 180) ? -dev : (360-dev);
+  return dev;
+}
+

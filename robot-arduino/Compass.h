@@ -15,6 +15,7 @@ class Compass {
     Compass(int id);
     
     float getHeadingDegrees();
+    float getDeviation(float course, float heading);
        
   private:
     Adafruit_HMC5883_Unified _hmc;
