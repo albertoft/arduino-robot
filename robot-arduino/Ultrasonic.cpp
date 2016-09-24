@@ -25,7 +25,7 @@ long Ultrasonic::getDistance() {
   digitalWrite(_triggerPin, LOW);
 
   // echo returns the sound wave travel time (in microseconds)
-  long duration = pulseIn(_echoPin, HIGH);
+  unsigned long duration = pulseIn(_echoPin, HIGH);
   _distance = duration / 29 / 2;
   
   return _distance;

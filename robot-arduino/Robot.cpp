@@ -17,12 +17,26 @@ void Robot::attach(int triggerPin, int echoPin, int servoRightPin, int servoLeft
   _servoLeft.attach(servoLeftPin);
   _report=String();
   _compass = Compass(12345);
+  
+  _distanceIndex = 0;
   stop();  
 }
 
 bool Robot::obstacleDetected() {
-  _distanceFront = _sonarFront.getDistance();
-  return bool(_distanceFront < 50);
+  long distance = _sonarFront.getDistance();
+
+  // store current measured distance to distances array
+  _distanceIndex = (++_distanceIndex) % DISTANCES_SIZE;
+  _distances[_distanceIndex] = distance;
+
+  // if any of last stored distances represents an obstacle, return that an obstacle is detected
+  // (avoid outlier values)
+  for (int i=0; i < DISTANCES_SIZE; i++) {
+    if (_distances[i] < DISTANCE_OBSTACLE) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void Robot::stop() 
@@ -33,6 +47,7 @@ void Robot::stop()
 
 void Robot::forward() 
 {
+  //0, 180 => full speed
   _servoRight.write(0);
   _servoLeft.write(180);
 }
@@ -45,11 +60,12 @@ void Robot::update()
     stop();
   }
   report();
+  delay(200);
 }
 
 void Robot::report()
 {
-  _report = String("d=") + _distanceFront + String(" h=") + _compass.getHeadingDegrees();
+  _report = String("d=") + _distances[_distanceIndex] + String(" h=") + _compass.getHeadingDegrees();
   Serial.println(_report);
 }
 
