@@ -5,7 +5,7 @@ Robot robot;
 
 void setup() {
   Serial.begin(9600);
-  robot.attach(11, 12, 10, 9);
+  robot.attach(7, 8, 10, 9, 11, 5, 6);
 }
 
 void loop() {

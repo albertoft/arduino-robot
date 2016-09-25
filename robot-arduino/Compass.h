@@ -1,5 +1,5 @@
 /*
-  Robot.h - Robot class.
+  Compass.h
 */
 
 #ifndef Compass_h

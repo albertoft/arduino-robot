@@ -10,16 +10,20 @@ Robot::Robot()
   ;
 }
 
-void Robot::attach(int triggerPin, int echoPin, int servoRightPin, int servoLeftPin) 
+void Robot::attach(int triggerPin, int echoPin, int servoRightPin, int servoLeftPin, int redPin, int greenPin, int bluePin) 
 {
+  _ledRGB = LedRGB(redPin, greenPin, bluePin);
   _sonarFront = Ultrasonic(triggerPin, echoPin);
   _servoRight.attach(servoRightPin);
   _servoLeft.attach(servoLeftPin);
   _report=String();
   _compass = Compass(12345);
-  
+
   _distanceIndex = 0;
-  stop();  
+
+  stop();
+  setStatus(STATUS_INIT);
+  delay(5000);
 }
 
 bool Robot::obstacleDetected() {
@@ -51,6 +55,7 @@ void Robot::setCourse(float course)
 
 void Robot::stop() 
 {
+  setStatus(STATUS_STOP);
   setCourse(NO_COURSE);
   _servoRight.write(SERVO_STOP);
   _servoLeft.write(SERVO_STOP);
@@ -76,6 +81,7 @@ void Robot::forward()
     if (_course == NO_COURSE) {
       setCourse(getHeading());
     }
+    setStatus(STATUS_FORWARD);
     _servoRight.write(SERVO_RIGHT_FWD);
     _servoLeft.write(SERVO_LEFT_FWD);
   }
@@ -83,16 +89,15 @@ void Robot::forward()
 
 void Robot::steer(bool direction) 
 {
+  setStatus(STATUS_STEER);
   switch (direction) {
     case LEFT:
       _servoRight.write(SERVO_RIGHT_STEER);
       _servoLeft.write(SERVO_STOP);
-      Serial.println("steer LEFT");
       break;
     case RIGHT:
       _servoRight.write(SERVO_STOP);
       _servoLeft.write(SERVO_LEFT_STEER);
-      Serial.println("steer RIGHT");
       break;
   }
 }
@@ -110,7 +115,31 @@ void Robot::update()
 
 void Robot::report()
 {
-  _report = String("d=") + _distances[_distanceIndex] + String(" c=") + _course + String(" h=") + _heading + String(" dev=") + _courseDeviation;
+  _report = String("s=") + _status + String(" d=") + _distances[_distanceIndex] + String(" c=") + _course + String(" h=") + _heading + String(" dev=") + _courseDeviation;
   Serial.println(_report);
+}
+
+void Robot::setStatus(char status)
+{
+  _status = status;
+  
+  switch(status) {
+    case STATUS_FORWARD:
+      _ledRGB.setColor(COLOR_GREEN);
+      break;
+
+    case STATUS_STOP:
+      _ledRGB.setColor(COLOR_RED);
+      break;
+
+    case STATUS_STEER:
+      _ledRGB.setColor(COLOR_BLUE);
+      break;
+
+    case STATUS_INIT:
+      _ledRGB.setColor(COLOR_PURPLE);
+      break;
+  }
+  
 }
 
