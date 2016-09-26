@@ -20,8 +20,17 @@ void Robot::attach(int triggerPin, int echoPin, int servoRightPin, int servoLeft
   _compass = Compass(12345);
 
   _distanceIndex = 0;
+  for (int i=0; i < DISTANCES_SIZE; i++) {
+    _distances[i] = 0;
+  }
+
+  _headingIndex = 0;
+  for (int i=0; i < HEADINGS_SIZE; i++) {
+    getHeading();
+  }
 
   stop();
+
   setStatus(STATUS_INIT);
   delay(5000);
 }
@@ -44,8 +53,17 @@ bool Robot::obstacleDetected() {
 }
 
 float Robot::getHeading() {
-  _heading = _compass.getHeadingDegrees();
-  return _heading;
+  float heading = _compass.getHeadingDegrees();
+
+  _headingIndex = (++_headingIndex) % HEADINGS_SIZE;
+  _headings[_headingIndex] = heading;
+
+  float headingSum = 0;
+  for (int i=0; i < HEADINGS_SIZE; i++) {
+    headingSum += _headings[i];
+  }
+  float headingAverage = (headingSum / HEADINGS_SIZE);
+  return headingAverage;
 }
 
 void Robot::setCourse(float course) 
@@ -103,7 +121,7 @@ void Robot::steer(bool direction)
 }
 
 void Robot::update()
-{
+{ 
   if (!obstacleDetected()) { 
     forward();
   } else {
@@ -115,7 +133,7 @@ void Robot::update()
 
 void Robot::report()
 {
-  _report = String("s=") + _status + String(" d=") + _distances[_distanceIndex] + String(" c=") + _course + String(" h=") + _heading + String(" dev=") + _courseDeviation;
+  _report = String("s=") + _status + String(" d=") + _distances[_distanceIndex] + String(" c=") + _course + String(" h=") + _headings[_headingIndex] + String(" dev=") + _courseDeviation;
   Serial.println(_report);
 }
 

@@ -17,6 +17,8 @@
 #define DISTANCES_SIZE 2
 #define DISTANCE_OBSTACLE 50
 
+#define HEADINGS_SIZE 1
+
 #define NO_COURSE -999
 #define COURSE_MAX_DEVIATION 5
 
@@ -58,9 +60,12 @@ class Robot {
     long _distances[DISTANCES_SIZE];
     int _distanceIndex;
 
+    float _headings[HEADINGS_SIZE];
+    int _headingIndex;
+
     float _course;
     float _courseDeviation;
-    float _heading;
+    //float _heading;
     
     String _report;
     char _status;
