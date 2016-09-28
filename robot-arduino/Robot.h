@@ -1,7 +1,8 @@
 /*
-  Robot.h - Robot class.
-*/
-
+ * Robot - 3 Wheels Robot
+ * 
+ */
+ 
 #ifndef Robot_h
 #define Robot_h
 
@@ -11,65 +12,75 @@
 
 #include "Ultrasonic.h"
 #include "Compass.h"
-#include "Speed.h"
+
 #include "LedRGB.h"
-
-#define DISTANCES_SIZE 2
-#define DISTANCE_OBSTACLE 50
-
-#define HEADINGS_SIZE 1
-
-#define NO_COURSE -999
-#define COURSE_MAX_DEVIATION 5
-
-#define LEFT 0
-#define RIGHT 1
-
-#define STATUS_INIT 'I' 
-#define STATUS_STOP 'S'
-#define STATUS_FORWARD 'F'
-#define STATUS_STEER 'x' 
+#include "RobotAux.h" 
 
 class Robot {
-  public:
-    Robot();
-    void attach(int triggerPin, int echoPin, int servoRightPin, int servoLeftPin, int redPin, int greenPin, int bluePin);
-
-    bool obstacleDetected();
-
-    float getHeading();
-    void setCourse(float course);
-    bool isCourseSet();
-    bool isCourseDeviated();
+	public:
+		Robot();
+		
+		/// Initilizes robot
+		void init(int triggerPin, int echoPin, int servoRightPin, int servoLeftPin, int redPin, int greenPin, int bluePin);
+		
+		/// Main loop. Transitions between states depending on sensors
+		void run();
     
-    void forward();
-    void stop();
-    void steer(bool direction);
+	private:
+		/// Sensor. Detect obstacles
+		bool isObstacleDetected();
+		
+		/// Sensor. Get heading
+		float getHeading();
+		
+		/// Control course
+		void setCourse(float course);
+		bool isCourseSet();
+		bool isCourseDeviated();
+		
+		/// States
+		void forward();
+		void stop();
+		void steer();
+		void error();
+		void setState(char state);
 
-    void setStatus(char status);
-    void update();
-    void report();
-    
-  private:
-    LedRGB _ledRGB;
-    Ultrasonic _sonarFront;
-    Compass _compass;
-    Servo _servoRight;
-    Servo _servoLeft;
-   
-    long _distances[DISTANCES_SIZE];
-    int _distanceIndex;
+		/// Utils. Timeout
+		void setTimeOut(unsigned int timeout);
+		bool isTimedOut();
+		
+		/// Utils. 
+		void report();
+		
+		/// Component. RGB led to display current status
+		LedRGB ledRGB;
+		
+		/// Component. Ultrasonic sensor (front) and distances to nearest obstacle
+		Ultrasonic sonarFront;
+		long distances[DISTANCES_SIZE];
+		int distanceIndex;
 
-    float _headings[HEADINGS_SIZE];
-    int _headingIndex;
+		/// Component. Compass, current heading, course and deviation
+		Compass compass;
+		float heading;
+		float course;
+		float courseDeviation;
 
-    float _course;
-    float _courseDeviation;
-    //float _heading;
-    
-    String _report;
-    char _status;
-    
+		/// Component. Servo motors (continuos rotation)
+		Servo servoRight;
+		Servo servoLeft;
+
+		/// current state
+		char state;
+		
+		/// current timeout (milliseconds)
+		unsigned int timeOut;
+		
+		/// actual time (milliseconds) when timeout was set
+		unsigned int lastTime;
+		
+		/// true if a timeout has occurred
+		bool wasTimedOut;
 };
 
 #endif

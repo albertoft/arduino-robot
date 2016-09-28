@@ -10,16 +10,16 @@
 #include <Adafruit_HMC5883_U.h>
 
 class Compass {
-  public:
-    Compass();
-    Compass(int id);
-    
-    float getHeadingDegrees();
-    float getDeviation(float course, float heading);
-       
-  private:
-    Adafruit_HMC5883_Unified _hmc;
-    float _headingDegrees;
+	public:
+		Compass();
+		Compass(int id);
+
+		float getHeadingDegrees();
+		float getDeviation(float course, float heading);
+		   
+	private:
+		Adafruit_HMC5883_Unified hmc;
+		float headingDegrees;
 };
 
 #endif

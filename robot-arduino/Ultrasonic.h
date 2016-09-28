@@ -8,15 +8,15 @@
 #include "Arduino.h"
 
 class Ultrasonic {
-  public:
-    Ultrasonic();
-    Ultrasonic(int triggerPin, int echoPin);
-    long getDistance();
-    
-  private:
-    int _triggerPin;
-    int _echoPin;
-    long _distance;
+	public:
+		Ultrasonic();
+		Ultrasonic(int triggerPin, int echoPin);
+		long getDistance();
+
+	private:
+		int triggerPin;
+		int echoPin;
+		long distance;
 };
 
 #endif
