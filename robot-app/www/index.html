@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en-us" ng-app="robotWeb">
+    <head>
+        <title>Robot WebApp</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <meta charset="UTF-8">
+
+        <link rel="stylesheet" href="assets/bower_components/bootstrap/dist/css/bootstrap.min.css" />
+        
+        <script src="assets/bower_components/angular/angular.min.js"></script>
+        <script src="assets/bower_components/angular-route/angular-route.min.js"></script>
+        
+		<script src="assets/bower_components/jquery/dist/jquery.min.js"></script>
+        
+		<script src="assets/bower_components/highcharts/highcharts.js"></script>
+        <script src="assets/bower_components/highcharts/modules/exporting.js"></script>
+        
+        <script src="app.js"></script>
+        <script src="modules/home/home.ctrl.js"></script>
+    </head>
+    <body>
+
+        <header>
+			<nav class="navbar navbar-default">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="/">AngularJS</a>
+				</div>
+
+				<ul class="nav navbar-nav navbar-right">
+					<li><a href="#"><i class="fa fa-home"></i> Home</a></li>
+				</ul>
+			</div>
+			</nav>
+		</header>
+
+        <div class="container">
+
+            <ng-view></ng-view>
+            
+		</div>
+
+    </body>
+</html>
