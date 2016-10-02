@@ -11,6 +11,7 @@
 #define COLOR_PURPLE 80,0,80
 #define COLOR_CYAN 0,255,255
 #define COLOR_BLACK 0,0,0
+#define COLOR_WHITE 255,255,255
 
 class LedRGB {
 	public:

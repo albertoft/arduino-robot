@@ -29,6 +29,8 @@ class Robot {
 	private:
 		/// Sensor. Detect obstacles
 		bool isObstacleDetected();
+		bool isObstacleDetected(long obstacleDistance);
+		bool isObstacleAlert();
 		
 		/// Sensor. Get heading
 		float getHeading();
@@ -37,11 +39,14 @@ class Robot {
 		void setCourse(float course);
 		bool isCourseSet();
 		bool isCourseDeviated();
+		bool isCourseDeviated(bool initialDevDir);
 		
 		/// States
 		void forward();
 		void stop();
 		void steer();
+		void steer(long obstacleDistance);
+		void findWayOut();
 		void error();
 		void setState(char state);
 
@@ -50,15 +55,14 @@ class Robot {
 		bool isTimedOut();
 		
 		/// Utils. 
-		void report();
+		void notifyStateChange();
 		
 		/// Component. RGB led to display current status
 		LedRGB ledRGB;
 		
 		/// Component. Ultrasonic sensor (front) and distances to nearest obstacle
 		Ultrasonic sonarFront;
-		long distances[DISTANCES_SIZE];
-		int distanceIndex;
+		long distance;
 
 		/// Component. Compass, current heading, course and deviation
 		Compass compass;
@@ -81,6 +85,9 @@ class Robot {
 		
 		/// true if a timeout has occurred
 		bool wasTimedOut;
+		
+		/// true if obstacle detected too close (alert distance)
+		bool obstacleAlert;
 };
 
 #endif
