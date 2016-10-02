@@ -1,31 +1,52 @@
-// Database
-var Datastore = require('nedb'), db = new Datastore({ filename: '/tmp/robot.data' });
-db.loadDatabase(function (err) {
-  ;
-});
+/*
+ * Database
+ */
+var db = {};
+db.filename = "/tmp/robot-stateChange.data";
+
+// move old database file (if any)
+var fs = require('fs');
+try {
+	fs.accessSync(db.filename, fs.W_OK);
+	fs.renameSync(db.filename, db.filename + ".old");
+	console.log("renamed previous " + db.filename + " to " + db.filename + ".old");
+} catch (ex) {
+	;
+}
+
+// initialize new database
+var Datastore = require('nedb');
+db.stateChange = new Datastore({ filename: db.filename, autoload: true});
 
 
-// Bluetooth
+/*
+ * Bluetoooth
+ */
 var address = '98:D3:33:80:82:00';
 var channel = 1;
-
 var BTSP = require('bluetooth-serial-port');
 var serial = new BTSP.BluetoothSerialPort();
 
+// configure bluetooth connection
 serial.on('found', function(address, name) {
 	serial.findSerialPortChannel(address, function(channel) {
+		
+		// connection
 		serial.connect(address, channel, function() {
 			console.log('connected');
+
+			// data reception
 			var tmp = '';
 			serial.on('data', function(buffer) {
 				var chunk = buffer.toString('ascii');
 				
-				var i=0, piece='', offset=0;
+				// split received data in lines (separated by newline char)
+				var i=0, line='', offset=0;
 				tmp += chunk;
 				while ( (i=tmp.indexOf('\n', offset)) !== -1) {
-					piece = tmp.substr(offset, i-offset);
+					line = tmp.substr(offset, i-offset);
 					offset = i + 1;
-					newPiece(piece);
+					processBluetoothLine(line);
 				}
 				tmp = tmp.substr(offset);
 			});
@@ -33,28 +54,42 @@ serial.on('found', function(address, name) {
 	});
 });
 
-function newPiece(msg) {
-	var object = JSON.parse(msg);
+// Process a line of bluetooth received data
+function processBluetoothLine(line) {
+	//console.log(line);
 	
-	db.insert(object, function (err, newDoc) {
+	// robot will send JSON strings, parse to object.
+	var object = JSON.parse(line);
+	
+	// insert state change object in database
+	db.stateChange.insert(object, function (err, newDoc) {
 		;
 	});
 }
 
+// launch bluetooth connection
 serial.inquire();
 
 
-// REST api
+/*
+ * REST APi
+ */
 var express = require('express');
 var app = express();
+
+// static content
 app.use(express.static('www'));
 
+// GET /api: returns latest robot state change events
 app.get('/api', function (req, res) {
-	db.find({}).sort({ time: 1 }).skip(1).limit(200).exec(function (err, docs) {
-  		res.send(200, docs);
+	
+	// events ordered by time 
+	db.stateChange.find({}).sort({ time: 1 }).skip(1).limit(800).exec(function (err, docs) {
+		res.status(200).send(docs)
 	});
 })
 
+// launch server
 var server = app.listen(8081, function () {
    var host = server.address().address
    var port = server.address().port
