@@ -5,6 +5,7 @@
 #include "Arduino.h"
 #include "Robot.h"
 
+
 /**
  * Default constructor
  */
@@ -12,6 +13,7 @@ Robot::Robot()
 {
 	;
 }
+
 
 /**
  * Creates robot 
@@ -39,12 +41,13 @@ void Robot::run()
 	if (!isCourseSet()) {
 		setCourse(getHeading());
 	}
-	forward();
 	if (isCourseDeviated()) {
 		steer();
 		if (this->wasTimedOut) {
 			error();
 		}
+	} else {
+		forward();
 	}
   } else {
 	setCourse(NO_COURSE);
@@ -93,12 +96,7 @@ bool Robot::isObstacleAlert()
  * @return heading (in degrees) [0, 360º]
  */
 float Robot::getHeading() {
-	float headingSum = 0;
-	for (int i=0; i < HEADING_AVG_MEASURES; i++) {
-		headingSum += compass.getHeadingDegrees();
-	}
-	this->heading = (headingSum / HEADING_AVG_MEASURES);
-	
+	this->heading = this->compass.getHeadingDegrees();	
 	return this->heading;
 }
 
@@ -109,6 +107,9 @@ float Robot::getHeading() {
  */
 void Robot::setCourse(float course) 
 {
+	if (isCourseSet()) {
+		this->lastKnownCourse = this->course;
+	}
 	this->course = course;
 }
 
@@ -249,13 +250,12 @@ void Robot::findWayOut()
 {
 	setState(STATE_FINDWAYOUT);
 	
-	setCourse(getHeading());
-	do {
-		setCourse(this->course - STATE_FINDWAYOUT_ANGLE);
-		steer(DISTANCE_OBSTACLE_FINDWAYOUT);
-	} while ( (isObstacleDetected(DISTANCE_OBSTACLE_FINDWAYOUT)) && (!isObstacleAlert()) );
-	
-	setCourse(getHeading());
+	// turn right
+	setCourse( fmod( (this->lastKnownCourse + 90.0), 360.0) );
+	steer(DISTANCE_OBSTACLE_FINDWAYOUT);
+
+	// remove course (if not obstacles ahead, it will go forward)
+	setCourse(NO_COURSE);
 }
 
 
@@ -269,17 +269,18 @@ void Robot::error()
 	setState(STATE_ERROR);
 }
 
+
 /**
  * Notifies a State Change event through Serial (Bluetooth). 
  */
 void Robot::notifyStateChange() 
-{
+{ 
 	String line = 
 		String("{") +
 		String("\"_event\": \"sc\", ") +
 		String("\"time\": ") + millis() + String(", ") +
 		String("\"state\": \"") + this->state + String("\", ") +
-		String("\"course\": ") + this->course + String(", ") +
+		String("\"course\": ") + DISPLAY_VALUE(this->course, NO_COURSE) + String(", ") +
 		String("\"heading\": ") + this->heading + String(", ") +
 		String("\"deviation\": ") + this->courseDeviation + String(", ") +
 		String("\"obstacle\": ") + this->distance +
@@ -287,6 +288,7 @@ void Robot::notifyStateChange()
 	;
 	Serial.println(line);
 }
+
 
 /**
  * Set a robot state

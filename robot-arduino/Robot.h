@@ -69,6 +69,7 @@ class Robot {
 		float heading;
 		float course;
 		float courseDeviation;
+		float lastKnownCourse;
 
 		/// Component. Servo motors (continuos rotation)
 		Servo servoRight;
