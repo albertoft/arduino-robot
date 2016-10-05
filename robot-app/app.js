@@ -33,7 +33,7 @@ serial.on('found', function(address, name) {
 		
 		// connection
 		serial.connect(address, channel, function() {
-			console.log('connected');
+			console.log('[bluetooth] connected!');
 
 			// data reception
 			var tmp = '';
@@ -56,15 +56,26 @@ serial.on('found', function(address, name) {
 
 // Process a line of bluetooth received data
 function processBluetoothLine(line) {
-	//console.log(line);
-	
+	console.log("[bluetooth] line=" + line);
+		
 	// robot will send JSON strings, parse to object.
 	var object = JSON.parse(line);
-	
-	// insert state change object in database
-	db.stateChange.insert(object, function (err, newDoc) {
-		;
+
+	formatRobotData(object, function(data) {
+		// insert state change object in database
+		db.stateChange.insert(data, function (err, newDoc) {
+			;
+		});
 	});
+
+	
+}
+
+function formatRobotData(data, callback) {
+	var stateName = {'F': 'Forward', 'X': 'Steer', 'W': 'FindWayOut', 'S': 'Stop', 'E': 'Error'}
+	data.state = stateName[data.state];
+	data.course = (data.course === -1) ? null:data.course;
+	callback(data);
 }
 
 // launch bluetooth connection
@@ -91,7 +102,6 @@ app.get('/api', function (req, res) {
 
 // launch server
 var server = app.listen(8081, function () {
-   var host = server.address().address
    var port = server.address().port
-   console.log("Example app listening at http://%s:%s", host, port)
+   console.log("[app server] ready at http://raspberrypi.local:" + port);
 })
