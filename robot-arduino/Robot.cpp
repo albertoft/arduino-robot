@@ -66,6 +66,7 @@ bool Robot::isObstacleDetected() {
 	return isObstacleDetected(DISTANCE_OBSTACLE);
 }
 
+
 /**
  * Detects if there is any obstacle using front Ultrasonic sensor
  * @return true if obstacle detected in front of the robot
@@ -85,6 +86,7 @@ bool Robot::isObstacleAlert()
 {
 	return this->obstacleAlert;
 }
+
 
 /**
  * Measures current robot heading using the compass
@@ -232,11 +234,11 @@ void Robot::steer(long obstacleDistance)
 		delay(STATE_STEER_DELAY);
 		timedOut = isTimedOut();
 		isDeviated = isCourseDeviated(initialDirection);
-		
-	} while ((isDeviated) && (!timedOut) && (!isObstacleDetected(obstacleDistance)));
 	
-	this->servoRight.write(SERVO_STOP);
-	this->servoLeft.write(SERVO_STOP);	
+		this->servoRight.write(SERVO_STOP);
+		this->servoLeft.write(SERVO_STOP);
+	
+	} while ((isDeviated) && (!timedOut) && (!isObstacleDetected(obstacleDistance)));
 }
 
 
@@ -253,7 +255,7 @@ void Robot::findWayOut()
 		steer(DISTANCE_OBSTACLE_FINDWAYOUT);
 	} while ( (isObstacleDetected(DISTANCE_OBSTACLE_FINDWAYOUT)) && (!isObstacleAlert()) );
 	
-	setCourse(getHeading());	
+	setCourse(getHeading());
 }
 
 
@@ -273,15 +275,15 @@ void Robot::error()
 void Robot::notifyStateChange() 
 {
 	String line = 
-		String("{ ") +
-		String("\"_type\": \"sc\", ") +
-		String("\"time\": \"") + millis() + String("\", ") +
+		String("{") +
+		String("\"_event\": \"sc\", ") +
+		String("\"time\": ") + millis() + String(", ") +
 		String("\"state\": \"") + this->state + String("\", ") +
-		String("\"course\": \"") + this->course + String("\", ") +
-		String("\"heading\": \"") + this->heading + String("\", ") +
-		String("\"deviation\": \"") + this->courseDeviation + String("\", ") +
-		String("\"obstacle\": \"") + this->distance + String("\"") +
-		String("} ");
+		String("\"course\": ") + this->course + String(", ") +
+		String("\"heading\": ") + this->heading + String(", ") +
+		String("\"deviation\": ") + this->courseDeviation + String(", ") +
+		String("\"obstacle\": ") + this->distance +
+		String("}");
 	;
 	Serial.println(line);
 }
