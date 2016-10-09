@@ -26,9 +26,19 @@ void Robot::init(int triggerPin, int echoPin, int servoRightPin, int servoLeftPi
 	this->servoLeft.attach(servoLeftPin);
 	this->compass = Compass(12345); // unique id
 	
+	this->lastHeading = 0;
+	this->totalDistance = 0;
+	this->lastTotalDistance = 0;
+	this->lastPosition.x = 0;
+	this->lastPosition.y = 0;
+	
 	stop();
 	setCourse(NO_COURSE);
 	setState(STATE_INIT);
+	
+	#ifdef ROBOT_TEST
+	test();
+	#endif
 }
 
 
@@ -37,27 +47,28 @@ void Robot::init(int triggerPin, int echoPin, int servoRightPin, int servoLeftPi
  */
 void Robot::run()
 { 
-  if (!isObstacleDetected()) {
-	if (!isCourseSet()) {
-		setCourse(getHeading());
-	}
-	if (isCourseDeviated()) {
-		steer();
-		if (this->wasTimedOut) {
+	#ifndef ROBOT_TEST 
+	if (!isObstacleDetected()) {
+		if (!isCourseSet()) {
+			setCourse(getHeading());
+		}
+		if (isCourseDeviated()) {
+			steer();
+		} else {
+			forward();
+		}
+	} 
+	else {
+		setCourse(NO_COURSE);
+		stop();
+		findWayOut();
+		if (isObstacleAlert()) {
 			error();
 		}
-	} else {
-		forward();
 	}
-  } else {
-	setCourse(NO_COURSE);
-    stop();
-	findWayOut();
-	if (isObstacleAlert()) {
-		error();
-	}
-  }
-  
+	
+	delay(ROBOT_DELAY);
+	#endif
 }
 
 
@@ -75,10 +86,10 @@ bool Robot::isObstacleDetected() {
  * @return true if obstacle detected in front of the robot
  */
 bool Robot::isObstacleDetected(long obstacleDistance) {
-	this->distance = this->sonarFront.getDistance();
-	this->obstacleAlert = (this->distance < DISTANCE_OBSTACLE_ALERT);
+	this->obstacleDistance = this->sonarFront.getDistance();
+	this->obstacleAlert = (this->obstacleDistance < DISTANCE_OBSTACLE_ALERT);
 	
-	return (this->distance < obstacleDistance);
+	return (this->obstacleDistance < obstacleDistance);
 }
 
 /**
@@ -150,40 +161,20 @@ bool Robot::isCourseSet()
 
 
 /**
- * Set a timeout time.
- * @param timeOut timeout time (in milliseconds)
- */
-void Robot::setTimeOut(unsigned int timeOut)
-{
-	this->timeOut = timeOut;
-	this->wasTimedOut = false;
-	this->lastTime = millis();
-}
-
-
-/**
- * Measures current time and finds out if robot current timeout has occurred
- * @return true is timeout has occurred 
- */
-bool Robot::isTimedOut()
-{
-	unsigned int now = millis();
-	this->wasTimedOut = ((now - this->lastTime) > this->timeOut);
-	return this->wasTimedOut;
-}
-
-
-/**
  * Forward state. Robot going forward. 
  */
 void Robot::forward() 
 {
 	setState(STATE_FORWARD);
+	
 	this->servoRight.write(SERVO_RIGHT_FWD);
 	this->servoLeft.write(SERVO_LEFT_FWD);
-	delay(STATE_FORWARD_DELAY);
+	delay(SERVO_FORWARD_DELAY);
+	
 	this->servoRight.write(SERVO_STOP);
 	this->servoLeft.write(SERVO_STOP);
+	
+	this->totalDistance += SERVO_FORWARD_DISTANCE;
 }
 
 
@@ -213,11 +204,8 @@ void Robot::steer()
 void Robot::steer(long obstacleDistance)
 {
 	setState(STATE_STEER);
-	setTimeOut(STATE_STEER_TIMEOUT);
 	
-	bool timedOut = false;
 	bool initialDirection = (this->courseDeviation > 0);
-	bool isDeviated = false;
 	
 	do {
 		bool direction = (this->courseDeviation > 0);
@@ -232,14 +220,14 @@ void Robot::steer(long obstacleDistance)
 				this->servoLeft.write(SERVO_LEFT_STEER);
 				break;
 		}
-		delay(STATE_STEER_DELAY);
-		timedOut = isTimedOut();
-		isDeviated = isCourseDeviated(initialDirection);
-	
+		delay(SERVO_STEER_DELAY);
+		
 		this->servoRight.write(SERVO_STOP);
 		this->servoLeft.write(SERVO_STOP);
-	
-	} while ((isDeviated) && (!timedOut) && (!isObstacleDetected(obstacleDistance)));
+		
+		//this->totalDistance += SERVO_STEER_DISTANCE;
+		
+	} while ((isCourseDeviated(initialDirection)) && (!isObstacleDetected(obstacleDistance)));
 }
 
 
@@ -275,15 +263,20 @@ void Robot::error()
  */
 void Robot::notifyStateChange() 
 { 
+	calculatePosition();
+	
 	String line = 
 		String("{") +
 		String("\"_event\": \"sc\", ") +
 		String("\"time\": ") + millis() + String(", ") +
 		String("\"state\": \"") + this->state + String("\", ") +
+		String("\"xpos\": ") + this->currentPosition.x + String(", ") +
+		String("\"ypos\": ") + this->currentPosition.y + String(", ") +
 		String("\"course\": ") + DISPLAY_VALUE(this->course, NO_COURSE) + String(", ") +
 		String("\"heading\": ") + this->heading + String(", ") +
+		String("\"totalDistance\": ") + this->totalDistance + String(", ") +
 		String("\"deviation\": ") + this->courseDeviation + String(", ") +
-		String("\"obstacle\": ") + this->distance +
+		String("\"obstacle\": ") + this->obstacleDistance +
 		String("}");
 	;
 	Serial.println(line);
@@ -337,6 +330,39 @@ void Robot::setState(char state)
 				delay(STATE_ERROR_BLINK_DELAY);
 			}
 			break;
+	}
+}
+
+/*
+ *
+ */
+void Robot::calculatePosition()
+{
+	#define PI 3.14159265
+	
+	float lastDistance = (this->totalDistance - this->lastTotalDistance);
+	
+	this->currentPosition.x = lastDistance * cos(this->lastHeading*PI/180) + this->lastPosition.x;
+	this->currentPosition.y = lastDistance * sin(this->lastHeading*PI/180) + this->lastPosition.y;
+	
+	this->lastHeading = this->heading;
+	this->lastTotalDistance = this->totalDistance;
+	this->lastPosition.x = this->currentPosition.x;
+	this->lastPosition.y = this->currentPosition.y;
+}
+
+
+/*
+ * Test. Some fancy tests.
+ */
+void Robot::test() 
+{
+	for (int i=0; i < 5; i++) {
+		this->servoRight.write(SERVO_RIGHT_FWD);
+		this->servoLeft.write(SERVO_LEFT_FWD);
+		delay(SERVO_FORWARD_DELAY);
+		this->servoRight.write(SERVO_STOP);
+		this->servoLeft.write(SERVO_STOP);
 	}
 }
 

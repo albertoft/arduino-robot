@@ -1,3 +1,7 @@
+#undef ROBOT_TEST
+
+#define ROBOT_DELAY 25
+
 /**
  * ROBOT STATES
  */
@@ -11,12 +15,9 @@
 
 // forward
 #define STATE_FORWARD 'F'
-#define STATE_FORWARD_DELAY 30
 
 // steer
 #define STATE_STEER 'X'
-#define STATE_STEER_DELAY 5
-#define STATE_STEER_TIMEOUT 20000
 
 // find a way out
 #define STATE_FINDWAYOUT 'W'
@@ -34,7 +35,7 @@
  * COURSE CONTROL
  */
 #define NO_COURSE -1
-#define COURSE_MAX_DEVIATION 2
+#define COURSE_MAX_DEVIATION 4
 
 
 /**
@@ -48,29 +49,27 @@
 
 /**
  * SERVO MOTORS
+ * 
+ * RIGHT: [180 (full backward) -> 90 (stop) -> 0 (full forward)]
+ * LEFT: [0 (full backward) -> 90 (stop) -> 180 (full forward)]
  */
 #define LEFT 0
 #define RIGHT 1
 
+#define LEFT_SPEED(rightSpeed) (180-rightSpeed)
+
+#define SERVO_FORWARD_DELAY 50
+#define SERVO_STEER_DELAY 50
+
 #define SERVO_STOP 90
-#define SERVO_RIGHT_FULL 0   // [0, 180]
-#define SERVO_LEFT_FULL 180  // [180, 0]
+#define SERVO_RIGHT_FWD 80
+#define SERVO_LEFT_FWD LEFT_SPEED(SERVO_RIGHT_FWD)-5
 
-#define SERVO_FWD_SPEED 83   
-#define SERVO_STEER_SPEED 87
+#define SERVO_RIGHT_STEER 85
+#define SERVO_LEFT_STEER LEFT_SPEED(SERVO_RIGHT_STEER)-2
 
-#define SERVO_RIGHT_FWD_INC 2
-#define SERVO_LEFT_FWD_INC 0
-
-#define SERVO_RIGHT_STEER_INC 2
-#define SERVO_LEFT_STEER_INC 0
-
-#define SERVO_RIGHT_FWD SERVO_RIGHT_FULL + SERVO_FWD_SPEED - SERVO_RIGHT_FWD_INC
-#define SERVO_LEFT_FWD SERVO_LEFT_FULL - SERVO_FWD_SPEED + SERVO_LEFT_FWD_INC
-
-#define SERVO_RIGHT_STEER SERVO_RIGHT_FULL + SERVO_STEER_SPEED - SERVO_RIGHT_STEER_INC
-#define SERVO_LEFT_STEER SERVO_LEFT_FULL - SERVO_STEER_SPEED + SERVO_LEFT_STEER_INC
-
+#define SERVO_FORWARD_DISTANCE 0.9
+#define SERVO_STEER_DISTANCE 0.295
 
 /**
  * DISPLAY_VALUE
