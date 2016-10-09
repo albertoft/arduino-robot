@@ -1,107 +1,74 @@
-/*
+/**
+ * Robot Server App
+ *  - Connects to robot using Bluetooth
+ *  - Receives data from robot and stores it in a database
+ *  - Send live data from robot to webclients using websockets
+ */
+var express = require('express');
+var app = express();
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
+app.use(express.static('www'));
+
+
+/**
  * Database
  */
-var db = {};
-db.filename = "/tmp/robot-stateChange.data";
-
-// move old database file (if any)
-var fs = require('fs');
-try {
-	fs.accessSync(db.filename, fs.W_OK);
-	fs.renameSync(db.filename, db.filename + ".old");
-	console.log("renamed previous " + db.filename + " to " + db.filename + ".old");
-} catch (ex) {
-	;
-}
-
-// initialize new database
-var Datastore = require('nedb');
-db.stateChange = new Datastore({ filename: db.filename, autoload: true});
+var Database = require('./database.js');
+var filename = (process.argv.length > 2) ? process.argv[2]:"/tmp/robot.db";
+var load = (process.argv.length > 3);
+var db = new Database(filename, load);
 
 
-/*
- * Bluetoooth
+/**
+ * REST
  */
-var address = '98:D3:33:80:82:00';
-var channel = 1;
-var BTSP = require('bluetooth-serial-port');
-var serial = new BTSP.BluetoothSerialPort();
-
-// configure bluetooth connection
-serial.on('found', function(address, name) {
-	serial.findSerialPortChannel(address, function(channel) {
-		
-		// connection
-		serial.connect(address, channel, function() {
-			console.log('[bluetooth] connected!');
-
-			// data reception
-			var tmp = '';
-			serial.on('data', function(buffer) {
-				var chunk = buffer.toString('ascii');
-				
-				// split received data in lines (separated by newline char)
-				var i=0, line='', offset=0;
-				tmp += chunk;
-				while ( (i=tmp.indexOf('\n', offset)) !== -1) {
-					line = tmp.substr(offset, i-offset);
-					offset = i + 1;
-					processBluetoothLine(line);
-				}
-				tmp = tmp.substr(offset);
-			});
+app.get('/api', function (req, res) {
+	// return latest 800 documents in database ordered by time
+	db.store.count({}, function (err, count) {
+		var nlimit = 800;
+		var nskip = ((count-nlimit) > 0) ? (count-nlimit):0;
+		db.store.find({}).sort({time: 1}).skip(nskip).limit(nlimit).exec(function(err, docs) {
+			res.status(200).send(docs)
 		});
 	});
 });
 
-// Process a line of bluetooth received data
-function processBluetoothLine(line) {
-	console.log("[bluetooth] line=" + line);
-		
-	// robot will send JSON strings, parse to object.
-	var object = JSON.parse(line);
 
-	formatRobotData(object, function(data) {
-		// insert state change object in database
-		db.stateChange.insert(data, function (err, newDoc) {
-			;
-		});
-	});
-
-	
-}
-
-function formatRobotData(data, callback) {
-	var stateName = {'F': 'Forward', 'X': 'Steer', 'W': 'FindWayOut', 'S': 'Stop', 'E': 'Error'}
-	data.state = stateName[data.state];
-	data.course = (data.course === -1) ? null:data.course;
-	callback(data);
-}
-
-// launch bluetooth connection
-serial.inquire();
-
-
-/*
- * REST APi
+/**
+ * Websockets
  */
-var express = require('express');
-var app = express();
+io.on('connection', function(socket) {  
+    console.log('[websocket] new connection');
+});
 
-// static content
-app.use(express.static('www'));
 
-// GET /api: returns latest robot state change events
-app.get('/api', function (req, res) {
+/**
+ * Bluetooth
+ */
+var Bluetooth = require('./bluetooth.js');
+var bluetooth = new Bluetooth('98:D3:33:80:82:00', 1, function(line) {
+	// robot will send JSON strings, parse into an object
+	var data = JSON.parse(line);
 	
-	// events ordered by time 
-	db.stateChange.find({}).sort({ time: 1 }).skip(1).limit(800).exec(function (err, docs) {
-		res.status(200).send(docs)
-	});
-})
+	// format received data 
+	var stateName = {'F':'Forward', 'X':'Steer', 'W':'FindWayOut', 'S':'Stop', 'E':'Error'}
+	data.state = stateName[data.state];
 
-// launch server
-var server = app.listen(8081, function () {
-   var port = server.address().port
-   console.log("[app server] ready at http://raspberrypi.local:" + port);
-})
+	// insert dato into database
+	db.store.insert(data, function (err, newDoc) {
+		;
+	});
+
+	// send data to websocket clients 
+	io.emit('messages', data);
+});
+bluetooth.serial.inquire();
+
+
+/**
+ * Server
+ */
+server.listen(8081, function () {
+   console.log("[server] ready at http://raspberrypi.local:8081");
+});
