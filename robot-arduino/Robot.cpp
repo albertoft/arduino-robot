@@ -238,9 +238,12 @@ void Robot::findWayOut()
 {
 	setState(STATE_FINDWAYOUT);
 	
-	// turn right
-	setCourse( fmod( (this->lastKnownCourse + 90.0), 360.0) );
-	steer(DISTANCE_OBSTACLE_FINDWAYOUT);
+	// right turn (90? right approx.)
+	for (int i=0; i < 25; i++) {
+		this->servoRight.write(SERVO_STOP);
+		this->servoLeft.write(SERVO_LEFT_STEER);
+		delay(SERVO_STEER_DELAY);	
+	}
 
 	// remove course (if not obstacles ahead, it will go forward)
 	setCourse(NO_COURSE);
@@ -272,6 +275,8 @@ void Robot::notifyStateChange()
 		String("\"state\": \"") + this->state + String("\", ") +
 		String("\"xpos\": ") + this->currentPosition.x + String(", ") +
 		String("\"ypos\": ") + this->currentPosition.y + String(", ") +
+		String("\"obsxpos\": ") + this->obstaclePosition.x + String(", ") +
+		String("\"obsypos\": ") + this->obstaclePosition.y + String(", ") +
 		String("\"course\": ") + DISPLAY_VALUE(this->course, NO_COURSE) + String(", ") +
 		String("\"heading\": ") + this->heading + String(", ") +
 		String("\"totalDistance\": ") + this->totalDistance + String(", ") +
@@ -334,7 +339,7 @@ void Robot::setState(char state)
 }
 
 /*
- *
+ * Calculate current robot and obstacle position (cartesian coordinates)
  */
 void Robot::calculatePosition()
 {
@@ -344,6 +349,10 @@ void Robot::calculatePosition()
 	
 	this->currentPosition.x = lastDistance * cos(this->lastHeading*PI/180) + this->lastPosition.x;
 	this->currentPosition.y = lastDistance * sin(this->lastHeading*PI/180) + this->lastPosition.y;
+	
+	float obstacleDistance = lastDistance + this->obstacleDistance;
+	this->obstaclePosition.x = obstacleDistance * cos(this->lastHeading*PI/180) + this->lastPosition.x;
+	this->obstaclePosition.y = obstacleDistance * sin(this->lastHeading*PI/180) + this->lastPosition.y;
 	
 	this->lastHeading = this->heading;
 	this->lastTotalDistance = this->totalDistance;
