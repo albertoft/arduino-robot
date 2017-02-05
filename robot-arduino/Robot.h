@@ -98,6 +98,7 @@ class Robot {
 		// Calculated. Robot position on 2D plane
 		Point currentPosition;
 		Point lastPosition;
+		Point obstaclePosition;
 };
 
 #endif
