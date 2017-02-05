@@ -71,10 +71,11 @@ module.controller('homeCtrl', ['$scope', '$log', '$http', '$interval', function 
 			}
         },
         plotOptions: { line: { lineWidth:2 } } ,
-		xAxis: [{ min: -200, max: 200, title: {text: 'cm'} }],
-		yAxis: [{ min: -200, max: 200, title: {text: 'cm'}, reversed: true }],
+		xAxis: [{ min: -600, max: 600, title: {text: 'cm'} }],
+		yAxis: [{ min: -600, max: 600, title: {text: 'cm'}, reversed: true }],
         series: [ 
-        	{ name: 'position', data: [] }
+        	{ name: 'position', data: [] },
+        	{ name: 'obstacle', data: [] }
 		]
 	};
 
@@ -94,6 +95,7 @@ module.controller('homeCtrl', ['$scope', '$log', '$http', '$interval', function 
 			$scope.chart.data.series[2].addPoint(data.obstacle, true, true);
 
 			$scope.chart.position.series[0].addPoint(data.position, true, true);
+			$scope.chart.position.series[1].addPoint(data.obspos, true, true);
 		});
 	};
 
@@ -104,7 +106,7 @@ module.controller('homeCtrl', ['$scope', '$log', '$http', '$interval', function 
      * @return object containg heading, course, obstacle and position points generated from data object received
      */
 	$scope.processData = function(obj) {
-		var result = { heading: null, course: null, obstacle: null, position: null };
+		var result = { heading: null, course: null, obstacle: null, position: null, obspos: null };
 		
 		// use time in seconds in x-axis
 		var time = obj.time/1000;
@@ -113,6 +115,7 @@ module.controller('homeCtrl', ['$scope', '$log', '$http', '$interval', function 
 		result.course = {x: time, y: obj.course};
 		result.obstacle = {x: time, y: obj.obstacle };
 		result.position = {x:obj.xpos, y: obj.ypos};
+		result.obspos = {x:obj.obsxpos, y:obj.obsypos};
 
 		return result;
 	}; 
@@ -132,6 +135,7 @@ module.controller('homeCtrl', ['$scope', '$log', '$http', '$interval', function 
 				$scope.chart.data.config.series[2].data.push(data.obstacle);
 
 				$scope.chart.position.config.series[0].data.push(data.position);
+				$scope.chart.position.config.series[1].data.push(data.obspos);
 			});
 			
    			$('#robot-data').highcharts($scope.chart.data.config);
