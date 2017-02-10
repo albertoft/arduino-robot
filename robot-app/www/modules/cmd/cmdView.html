@@ -1,0 +1,46 @@
+<style>
+.clicked {
+  background-color: blue;
+}
+</style>
+
+<h1>Robot Commands</h1>
+
+<div id="messages"></div>
+
+<div class="container-fluid">
+
+<div class="row">
+<div class="btn-group btn-group-justified" role="group" aria-label="...">
+	<a class="btn btn-default" ng-click="sendOnce('a')">
+		<span class="glyphicon glyphicon-road"></span>
+		Auto
+	</a>
+	<a class="btn btn-default" ng-click="sendOnce('m')">
+		<span class="glyphicon glyphicon-user"></span>
+		Manual
+	</a>
+</div>
+</div>
+
+<br/>
+
+<div class="row">
+<div class="btn-group btn-group-lg btn-group-justified" role="group" aria-label="...">
+	<a class="btn btn-primary" ng-click="sendInterval('l')">
+		<span class="glyphicon glyphicon-arrow-left"></span>
+		Left
+	</a>
+	<a class="btn btn-primary" ng-click="sendInterval('f')">
+		<span class="glyphicon glyphicon-arrow-up"></span>
+		Forwad
+	</a>
+	<a class="btn btn-primary" ng-click="sendInterval('r')"">
+		<span class="glyphicon glyphicon-arrow-right"></span>
+		Right
+	</a>
+</div>
+</div>
+
+</div>
+

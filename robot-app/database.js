@@ -5,11 +5,20 @@
 
 /** 
  * constructor
- * @param filename path to the file that will be used to store robot database
+ * @param filename path to the file that will be used to store robot database, if no filename specified an in-memory version is used
  * @param load if true, filename will be loaded if existing (opens a previously created database file)
  */
 function Database(filename, load) {
 	this.filename = filename;
+	var that = this;
+	var Datastore = require('nedb');
+	
+	// no filename specified, use in-memory database
+	if ((!filename) || (filename==='')) {
+ 		this.store = new Datastore();
+		this.log("using in-memory db");
+		return;
+	}
 
 	// rename database file if it already exists 
 	if (!load) {
@@ -24,9 +33,7 @@ function Database(filename, load) {
 	}
 
 	// initialize database
-	var Datastore = require('nedb');
 	this.store = new Datastore({ filename: this.filename });
-	var that = this;
 	this.store.loadDatabase(function (err) { 
 		if (err) {
 			that.log(err);

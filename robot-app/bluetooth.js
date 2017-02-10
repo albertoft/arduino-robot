@@ -69,6 +69,8 @@ Bluetooth.prototype.setup = function(callback) {
 	serial.on('failure', function(err) {
 		that.log('failure!');
 		that.log(err);
+		that.log('trying to re-connect');
+		that.serial.inquire();
 	});
 };
 
