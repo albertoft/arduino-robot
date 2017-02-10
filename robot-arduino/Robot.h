@@ -47,15 +47,21 @@ class Robot {
 		
 		// States
 		void forward();
+		void forward(int iterations);
 		void stop();
 		void steer();
 		void steer(long obstacleDistance);
+		void steer(bool direction, int iterations);
 		void findWayOut();
 		void error();
 		void setState(char state);
 		
 		// Positioning
 		void calculatePosition();
+		
+		// Commands
+		bool isCommandReceived();
+		void doCommand();
 
 		// Utils. Timeout
 		void setTimeOut(unsigned int timeout);
@@ -90,6 +96,12 @@ class Robot {
 
 		// current state
 		char state;
+		
+		// current mode (auto, manual)
+		char mode;
+		
+		// command received through bluetooth
+		char command;
 		
 		// Calculated. Total travelled distance (cm)
 		float totalDistance;

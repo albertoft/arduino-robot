@@ -32,6 +32,9 @@ void Robot::init(int triggerPin, int echoPin, int servoRightPin, int servoLeftPi
 	this->lastPosition.x = 0;
 	this->lastPosition.y = 0;
 	
+	this->command = COMMAND_NONE;
+	this->mode = MODE_AUTO;
+	
 	stop();
 	setCourse(NO_COURSE);
 	setState(STATE_INIT);
@@ -47,25 +50,40 @@ void Robot::init(int triggerPin, int echoPin, int servoRightPin, int servoLeftPi
  */
 void Robot::run()
 { 
-	#ifndef ROBOT_TEST 
-	if (!isObstacleDetected()) {
-		if (!isCourseSet()) {
-			setCourse(getHeading());
-		}
-		if (isCourseDeviated()) {
-			steer();
-		} else {
-			forward();
-		}
-	} 
-	else {
-		setCourse(NO_COURSE);
-		stop();
-		findWayOut();
-		if (isObstacleAlert()) {
-			error();
-		}
+	#ifndef ROBOT_TEST
+	
+	if (isCommandReceived()) {
+		// command received. do it and continue to next cycle.
+		doCommand();
 	}
+	else {
+		// no command received
+		if (this->mode==MODE_AUTO) {
+			// robot in automatic mode. it goes on its own.
+			if (!isObstacleDetected()) {
+				if (!isCourseSet()) {
+					setCourse(getHeading());
+				}
+				if (isCourseDeviated()) {
+					steer();
+				} else {
+					forward();
+				}
+			} 
+			else {
+				setCourse(NO_COURSE);
+				stop();
+				findWayOut();
+				if (isObstacleAlert()) {
+					error();
+				}
+			}
+		} 
+		else { 
+			; // robot in manual mode (nothing is done here). it should do only received commands. 
+			
+		} // if MODE_AUTO
+	} // if isCommandReceived
 	
 	delay(ROBOT_DELAY);
 	#endif
@@ -178,6 +196,18 @@ void Robot::forward()
 }
 
 
+/**
+ * Forward state. Simply going forward during n iterations
+ * @param iterations number of SERVO_FORWARD_DELAYS in which the robot will be going forward
+ */
+void Robot::forward(int iterations) 
+{
+	for (int i=0; i < iterations; i++) {
+		forward();
+	}
+}
+
+
 /** 
  * Stop state. Robot stopped.
  */
@@ -232,19 +262,44 @@ void Robot::steer(long obstacleDistance)
 
 
 /**
+ * Steer state. Simple steering.
+ * @param direction steer direction
+ * @param iterations number of SERVO_STEER_DELAY which the robot will be steering
+ */
+void Robot::steer(bool direction, int iterations)
+{
+	setState(STATE_STEER);
+	
+	for (int i=0; i < iterations; i++) {
+		switch (direction) {
+			case LEFT:
+				this->servoRight.write(SERVO_RIGHT_STEER);
+				this->servoLeft.write(SERVO_STOP);
+				break;
+				
+			case RIGHT:
+				this->servoRight.write(SERVO_STOP);
+				this->servoLeft.write(SERVO_LEFT_STEER);
+				break;
+		}
+		delay(SERVO_STEER_DELAY);
+		
+		this->servoRight.write(SERVO_STOP);
+		this->servoLeft.write(SERVO_STOP);
+	}
+}
+
+
+/**
  * After a stop encountering an obstacle, find a way out.
  */
 void Robot::findWayOut()
 {
 	setState(STATE_FINDWAYOUT);
 	
-	// right turn (90? right approx.)
-	for (int i=0; i < 25; i++) {
-		this->servoRight.write(SERVO_STOP);
-		this->servoLeft.write(SERVO_LEFT_STEER);
-		delay(SERVO_STEER_DELAY);	
-	}
-
+	// right turn (90 degrees right approx.)
+	steer(RIGHT, 25);
+	
 	// remove course (if not obstacles ahead, it will go forward)
 	setCourse(NO_COURSE);
 }
@@ -271,6 +326,8 @@ void Robot::notifyStateChange()
 	String line = 
 		String("{") +
 		String("\"_event\": \"sc\", ") +
+		String("\"command\": ") + String("\"") + this->command + String("\"") + String(", ") +
+		String("\"mode\": ") + String("\"") + this->mode + String("\"") + String(", ") +
 		String("\"time\": ") + millis() + String(", ") +
 		String("\"state\": \"") + this->state + String("\", ") +
 		String("\"xpos\": ") + this->currentPosition.x + String(", ") +
@@ -362,16 +419,70 @@ void Robot::calculatePosition()
 
 
 /*
+ * Return if robot has received a command through bluetooth
+ */ 
+bool Robot::isCommandReceived()
+{
+	if (Serial.available() > 0) {
+		this->command = Serial.read();
+		notifyStateChange();
+		return true;
+	}
+	return false;
+}
+
+
+/*
+ * Execute the current received command
+ */
+void Robot::doCommand()
+{
+	// execute the command action
+	switch(this->command) {
+		case COMMAND_FORWARD:
+			forward(5);
+			break;
+		case COMMAND_LEFT:
+			steer(LEFT, 5);
+			break;
+		case COMMAND_RIGHT:
+			steer(RIGHT, 5);
+			break;
+		case COMMAND_MODE_MANUAL:
+			this->mode = MODE_MANUAL;
+			break;
+		case COMMAND_MODE_AUTO:
+			this->mode = MODE_AUTO;
+			break;
+	}
+	
+	// now, there is no pending command
+	this->command = COMMAND_NONE;
+	
+	// grab some sensor data so we can report current situation
+	setCourse(NO_COURSE);
+	isObstacleDetected();
+	getHeading();
+	isCourseDeviated();
+	
+	notifyStateChange();
+}
+
+
+/*
  * Test. Some fancy tests.
  */
 void Robot::test() 
 {
-	for (int i=0; i < 5; i++) {
-		this->servoRight.write(SERVO_RIGHT_FWD);
-		this->servoLeft.write(SERVO_LEFT_FWD);
-		delay(SERVO_FORWARD_DELAY);
-		this->servoRight.write(SERVO_STOP);
-		this->servoLeft.write(SERVO_STOP);
+	while (1) {
+		// send data only when you receive data:
+		if (Serial.available() > 0) {
+			// read the incoming byte:
+			this->command = Serial.read();
+
+			this->notifyStateChange();
+		}
+		delay(ROBOT_DELAY);
 	}
 }
 

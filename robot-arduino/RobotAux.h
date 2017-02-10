@@ -8,7 +8,7 @@
 
 // init
 #define STATE_INIT 'I' 
-#define STATE_INIT_DELAY 5000
+#define STATE_INIT_DELAY 30000
 
 // stop
 #define STATE_STOP 'S'
@@ -75,3 +75,21 @@
  * DISPLAY_VALUE
  */
 #define DISPLAY_VALUE(X, UNDEF) ((X != UNDEF) ? String(X):String("null")) 
+
+
+/**
+ * ROBOT COMMANDS
+ */
+#define COMMAND_NONE '.'
+#define COMMAND_FORWARD 'f'
+#define COMMAND_RIGHT 'r'
+#define COMMAND_LEFT 'l'
+#define COMMAND_MODE_MANUAL 'm'
+#define COMMAND_MODE_AUTO 'a'
+
+
+/**
+ * ROBOT MODES
+ */
+#define MODE_AUTO 'a'
+#define MODE_MANUAL 'm'
