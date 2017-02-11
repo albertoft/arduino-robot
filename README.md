@@ -15,3 +15,17 @@ A very simple 3-wheel robot that can be managed from an external application.
 * 1 x Led RGB.
 
 ![Robot](https://github.com/albertoft/robot/blob/master/doc/img/robot-1.jpg)
+
+# NodeJS application
+* Runs on a RaspBerry Pi 2 + CSL Bluetooth USB Adapter micro V4.0.
+* Receives monitor data from robot using Bluetooth (heading, course, obstacle, position, state, etc.)
+ * Sends live monitor data using websocket to client AngularJS application.
+ * Stores received data in database (so it can be retrieved later).
+* REST api that can be used to retrive monitor data or to send commands to robot.
+
+# AngularJS application
+* Display robot monitor data using HighCharts.
+ * Charts are updated in real-time as live monitor data is received through websockets. 
+* Allows the user to send commands to the robot:
+  * Set Auto / manual mode.
+  * Go Forward / Left / Right.
