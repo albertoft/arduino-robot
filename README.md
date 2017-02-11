@@ -23,9 +23,15 @@ A very simple 3-wheel robot that can be managed from an external application.
  * Stores received data in database (so it can be retrieved later).
 * REST api that can be used to retrive monitor data or to send commands to robot.
 
+![NodeJS-app](https://github.com/albertoft/robot/blob/master/doc/img/nodeapp-1-auto.jpg)
+
 # AngularJS application
 * Display robot monitor data using HighCharts.
  * Charts are updated in real-time as live monitor data is received through websockets. 
 * Allows the user to send commands to the robot:
   * Set Auto / manual mode.
   * Go Forward / Left / Right.
+
+![AngularJS-app-data](https://github.com/albertoft/robot/blob/master/doc/img/angularapp-monitor-data.jpg)
+![AngularJS-app-position](https://github.com/albertoft/robot/blob/master/doc/img/angularapp-monitor-position.jpg)
+![AngularJS-app-command](https://github.com/albertoft/robot/blob/master/doc/img/angularapp-command.PNG)
