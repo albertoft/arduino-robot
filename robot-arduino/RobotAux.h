@@ -8,7 +8,7 @@
 
 // init
 #define STATE_INIT 'I' 
-#define STATE_INIT_DELAY 30000
+#define STATE_INIT_DELAY 5000
 
 // stop
 #define STATE_STOP 'S'
