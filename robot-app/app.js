@@ -37,24 +37,20 @@ io.on('connection', function(socket) {
  */
 var Bluetooth = require('./bluetooth.js');
 var bluetooth = new Bluetooth('98:D3:33:80:82:00', 1, function(line) {
-	try {
-		// robot will send JSON strings, parse into an object
-		var data = JSON.parse(line);
+	// robot will send JSON strings, parse into an object
+	var data = JSON.parse(line);
 	
-		// format received data 
-		var stateName = {'F':'Forward', 'X':'Steer', 'W':'FindWayOut', 'S':'Stop', 'E':'Error'}
-		data.state = stateName[data.state];
+	// format received data 
+	var stateName = {'F':'Forward', 'X':'Steer', 'W':'FindWayOut', 'S':'Stop', 'E':'Error'}
+	data.state = stateName[data.state];
 
-		// insert dato into database
-		db.store.insert(data, function (err, newDoc) {
-			;
-		});
+	// insert dato into database
+	db.store.insert(data, function (err, newDoc) {
+		;
+	});
 
-		// send data to websocket clients 
-		io.emit('messages', data);
-	} catch (err) {
-		bluetooth.log("error in received line: " + err.message);
-	} 
+	// send data to websocket clients 
+	io.emit('messages', data);
 });
 bluetooth.log("trying to connect...");
 bluetooth.serial.inquire();
