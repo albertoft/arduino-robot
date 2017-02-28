@@ -1,4 +1,7 @@
 A very simple 3-wheel robot that can be managed from an external application.
+
+The goal of the experiment is trying to solve, in simplistic and home-made way, some of the challenges of having an autonomous rover.
+
 ![Scheme](https://github.com/albertoft/robot/blob/master/doc/robot-scheme.png)
 
 # Robot
